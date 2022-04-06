@@ -1,6 +1,6 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
 
-name: 'composer-install-action'
+name: 'github-action-composer-install'
 author: 'luminsports'
 description: 'Install Composer Dependencies via Github Action.'
 inputs:
@@ -26,21 +26,28 @@ inputs:
     required: false
     default: 'true'
   artifact:
-    description: 'Whether to create artifacts.'
-    required: false
-    default: 'true'
-  artifact-name:
     description: 'Name of generated artifact.'
     required: false
-    default: 'composer'
+    default: ''
   artifact-path:
-    description: 'Name of generated artifact.'
+    description: 'Path of generated artifact.'
     required: false
     default: 'vendor.tar'
   artifact-retention-days:
     description: 'Number of days that the artifact should be retained for.'
     required: false
     default: '7'
+outputs:
+  artifact:
+    description: 'Name of generated artifact.'
+    value: ${{ inputs.artifact }}
+  artifact-path:
+    description: 'Path of generated artifact.'
+    value: ${{ inputs.artifact-path }}
+  composer-cache-dir:
+    description: 'Composer cache directory.'
+    value: ${{ steps.composer-cache.outputs.dir }}
+
 runs:
   using: 'composite'
   steps:
@@ -63,18 +70,18 @@ runs:
       run: composer install --no-ansi --no-interaction --no-progress --no-suggest${{ inputs.prefer-dist == 'true' && ' --prefer-dist' || '' }} ${{ inputs.prefer-source == 'true' && ' --prefer-source' || '' }} ${{ inputs.no-dev == 'true' && ' --no-dev' || '' }}${{ inputs.optimize-autoloader == 'true' && ' --optimize-autoloader' || '' }}
 
     - name: Compress vendor directory
-      if: inputs.artifact == 'true'
+      if: inputs.artifact != ''
       shell: bash
       run: tar -cvf ${{ inputs.artifact-path }} vendor/
 
     - name: Put built assets in Artifacts
-      if: inputs.artifact == 'true'
+      if: inputs.artifact != ''
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ inputs.artifact-name }}
+        name: ${{ inputs.artifact }}
         path: ${{ inputs.artifact-path }}
         if-no-files-found: error
         retention-days: ${{ inputs.artifact-retention-days }}
 branding:
-  icon: 'check'
-  color: 'blue'
+  icon: 'package'
+  color: 'purple'
