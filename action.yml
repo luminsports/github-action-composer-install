@@ -1,0 +1,80 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+
+name: 'composer-install-action'
+author: 'luminsports'
+description: 'Install Composer Dependencies via Github Action.'
+inputs:
+  no-dev:
+    description: 'Disables installation of require-dev packages.'
+    required: false
+  optimize-autoloader:
+    description: 'Optimize autoloader during autoloader dump.'
+    required: false
+    default: 'true'
+  no-autoloader:
+    description: 'Optimize autoloader during autoloader dump.'
+    required: false
+  prefer-dist:
+    description: 'Forces installation from package dist (default behavior).'
+    required: false
+    default: 'true'
+  prefer-source:
+    description: 'Forces installation from package sources when possible, including VCS information.'
+    required: false
+  cache:
+    description: 'Whether to use cache.'
+    required: false
+    default: 'true'
+  artifact:
+    description: 'Whether to create artifacts.'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name of generated artifact.'
+    required: false
+    default: 'composer'
+  artifact-path:
+    description: 'Name of generated artifact.'
+    required: false
+    default: 'vendor.tar'
+  artifact-retention-days:
+    description: 'Number of days that the artifact should be retained for.'
+    required: false
+    default: '7'
+runs:
+  using: 'composite'
+  steps:
+    - name: Get Composer Cache Directory
+      if: inputs.cache == 'true'
+      id: composer-cache
+      shell: bash
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      if: inputs.cache == 'true'
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      shell: bash
+      run: composer install --no-ansi --no-interaction --no-progress --no-suggest${{ inputs.prefer-dist == 'true' && ' --prefer-dist' || '' }} ${{ inputs.prefer-source == 'true' && ' --prefer-source' || '' }} ${{ inputs.no-dev == 'true' && ' --no-dev' || '' }}${{ inputs.optimize-autoloader == 'true' && ' --optimize-autoloader' || '' }}
+
+    - name: Compress vendor directory
+      if: inputs.artifact == 'true'
+      shell: bash
+      run: tar -cvf ${{ inputs.artifact-path }} vendor/
+
+    - name: Put built assets in Artifacts
+      if: inputs.artifact == 'true'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.artifact-path }}
+        if-no-files-found: error
+        retention-days: ${{ inputs.artifact-retention-days }}
+branding:
+  icon: 'check'
+  color: 'blue'
