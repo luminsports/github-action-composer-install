@@ -55,7 +55,7 @@ runs:
       if: inputs.cache == 'true'
       id: composer-cache
       shell: bash
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
     - name: Cache dependencies
       if: inputs.cache == 'true'
@@ -76,7 +76,7 @@ runs:
 
     - name: Put built assets in Artifacts
       if: inputs.artifact != ''
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ inputs.artifact }}
         path: ${{ inputs.artifact-path }}
