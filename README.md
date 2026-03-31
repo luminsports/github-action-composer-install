@@ -13,7 +13,7 @@ Install Composer Dependencies via Github Action.
 <!-- start usage -->
 
 ```yaml
-- uses: luminsports/github-action-composer@main
+- uses: luminsports/github-action-composer-install@main
   with:
     # Disables installation of require-dev packages.
     no-dev: ""
